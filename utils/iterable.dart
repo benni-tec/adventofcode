@@ -12,6 +12,8 @@ extension Empty on Iterable<String> {
   Iterable<String> nonEmpties() => where((element) => element.isNotEmpty);
 
   Iterable<String> empties() => where((element) => element.isEmpty);
+
+  Iterable<String> nonWhitespace() => map((e) => e.trim()).where((element) => element.isNotEmpty);
 }
 
 extension Nested<T> on Iterable<Iterable<T>> {
