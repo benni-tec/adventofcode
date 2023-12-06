@@ -42,6 +42,20 @@ extension Groups<T> on Iterable<T> {
           map[k] = v + 1;
         return map;
       });
+
+  Iterable<R> pair<S, R>(Iterable<S> other, R Function(T, S) join) sync* {
+    final i1 = this.iterator;
+    final i2 = other.iterator;
+
+    while (true) {
+      final n1 = i1.moveNext();
+      final n2 = i2.moveNext();
+      if (n1 != n2) throw "Bad State: Iterables have different lengths!";
+      if (!n1) break;
+
+      yield join(i1.current, i2.current);
+    }
+  }
 }
 
 extension Permutations<T> on Iterable<T> {
