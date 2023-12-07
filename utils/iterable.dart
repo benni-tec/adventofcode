@@ -1,11 +1,11 @@
 import 'dart:math' as math;
 
 extension Aggregations on Iterable<int> {
-  int sum() => length == 0 ? 0 : reduce((value, element) => value + element);
+  int sum() => isEmpty ? 0 : reduce((value, element) => value + element);
 
-  int max() => reduce(math.max);
+  int max() => isEmpty ? 0 : reduce(math.max);
 
-  int min() => reduce(math.min);
+  int min() => isEmpty ? 0 : reduce(math.min);
 }
 
 extension Empty on Iterable<String> {
@@ -43,6 +43,9 @@ extension Groups<T> on Iterable<T> {
         return map;
       });
 
+  int count(bool Function(T) test) => where(test).length;
+  int countEq(T test) => count((p0) => p0 == test);
+
   Iterable<R> pair<S, R>(Iterable<S> other, R Function(T, S) join) sync* {
     final i1 = this.iterator;
     final i2 = other.iterator;
@@ -71,5 +74,11 @@ extension Permutations<T> on Iterable<T> {
     final permutation = List.generate(l, (index) => l - index - 1);
 
     return permutation.map((e) => elementAt(e));
+  }
+
+  Iterable<S> expandPrint<S>(Iterable<S> Function(T e) toElements) {
+    final i = expand(toElements);
+    print("${i.length} - $i");
+    return i;
   }
 }

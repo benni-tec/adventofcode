@@ -37,17 +37,27 @@ humidity-to-location map:
 56 93 4""";
 
 void main() async {
-  do1(await File('2023/05-input.txt').readAsLines(), Platform.lineTerminator);
+  do2(await File('2023/05-input.txt').readAsLines(), Platform.lineTerminator);
 }
 
-int do1(List<String> lines, String terminator) {
+int do2(List<String> lines, String terminator) {
   final almanac = Almanac.parse(lines, terminator);
-  // print(almanac);
-  // print(almanac.soilToFertilizer);
-  final min = almanac.map((seed) => seed.location).min();
 
-  print(min);
-  return min;
+  final ranges = almanac.seeds
+      .expandPrint(almanac.seedsToSoil.split)
+      .expandPrint(almanac.soilToFertilizer.split)
+      .expandPrint(almanac.fertilizerToWater.split)
+      .expandPrint(almanac.waterToLight.split)
+      .expandPrint(almanac.lightToTemperature.split)
+      .expandPrint(almanac.temperatureToHumidity.split)
+      .expandPrint(almanac.humidityToLocation.split).toList();
+
+  print(ranges.length);
+
+  final minn = ranges.map((e) => e.start).min();
+
+  print(minn);
+  return minn;
 }
 
 class Seed {
@@ -76,8 +86,8 @@ class Seed {
       "Seed(id: $id, s: $soil, f: $fertilizer, w: $water, l: $light, t: $temperature, h: $humidity, l: $location)";
 }
 
-class Almanac extends Iterable<Seed> {
-  final Iterable<int> seeds;
+class Almanac {
+  final List<Range> seeds;
   final RangeMappedList seedsToSoil;
   final RangeMappedList soilToFertilizer;
   final RangeMappedList fertilizerToWater;
@@ -97,7 +107,8 @@ class Almanac extends Iterable<Seed> {
     required this.humidityToLocation,
   });
 
-  static MapEntry<String, RangeMappedList> parsePart(String part, String terminator) {
+  static MapEntry<String, RangeMappedList> parsePart(
+      String part, String terminator) {
     final data = part.split(terminator);
     final s = data[0].split(' ');
     return MapEntry(
@@ -110,31 +121,6 @@ class Almanac extends Iterable<Seed> {
     final parts = lines.join(terminator).split(terminator * 2);
     final seeds = parts[0]
         .replaceFirst("seeds: ", "")
-        .split(" ")
-        .nonWhitespace()
-        .map(int.parse);
-    final _maps = parts
-        .sublist(1)
-        .nonWhitespace()
-        .map((e) => parsePart(e, terminator));
-    final maps = Map.fromEntries(_maps);
-
-    return Almanac(
-      seeds: seeds,
-      seedsToSoil: maps["seed-to-soil"]!,
-      soilToFertilizer: maps["soil-to-fertilizer"]!,
-      fertilizerToWater: maps["fertilizer-to-water"]!,
-      waterToLight: maps["water-to-light"]!,
-      lightToTemperature: maps["light-to-temperature"]!,
-      temperatureToHumidity: maps["temperature-to-humidity"]!,
-      humidityToLocation: maps["humidity-to-location"]!,
-    );
-  }
-
-  factory Almanac.parse2(List<String> lines, String terminator) {
-    final parts = lines.join(terminator).split(terminator * 2);
-    final seeds = parts[0]
-        .replaceFirst("seeds: ", "")
         .split(' ')
         .map(int.parse)
         .fold([<int>[]], (value, element) {
@@ -144,18 +130,14 @@ class Almanac extends Iterable<Seed> {
         value.add([element]);
 
       return value;
-    }).expand((pair) {
-      print(pair);
-      return Iterable.generate(pair[1], (i) => i + pair[0]);
     });
-    final _maps = parts
-        .sublist(1)
-        .nonWhitespace()
-        .map((e) => parsePart(e, terminator));
+
+    final _maps =
+        parts.sublist(1).nonWhitespace().map((e) => parsePart(e, terminator));
     final maps = Map.fromEntries(_maps);
 
     return Almanac(
-      seeds: seeds,
+      seeds: seeds.map((e) => Range(e[0], e[1])).toList(),
       seedsToSoil: maps["seed-to-soil"]!,
       soilToFertilizer: maps["soil-to-fertilizer"]!,
       fertilizerToWater: maps["fertilizer-to-water"]!,
@@ -165,31 +147,6 @@ class Almanac extends Iterable<Seed> {
       humidityToLocation: maps["humidity-to-location"]!,
     );
   }
-
-  @override
-  int get length => seeds.length;
-
-  @override
-  Iterator<Seed> get iterator => seeds.map((id) {
-        final soil = seedsToSoil[id];
-        final fertilizer = soilToFertilizer[soil];
-        final water = fertilizerToWater[fertilizer];
-        final light = waterToLight[water];
-        final temperature = lightToTemperature[light];
-        final humidity = temperatureToHumidity[temperature];
-        final location = humidityToLocation[humidity];
-
-        return Seed(
-          id: id,
-          soil: soil,
-          fertilizer: fertilizer,
-          water: water,
-          light: light,
-          temperature: temperature,
-          humidity: humidity,
-          location: location,
-        );
-      }).iterator;
 }
 
 class RangeMapper {
@@ -225,6 +182,9 @@ class Range {
   final int end;
 
   const Range(this.start, this.end);
+
+  @override
+  String toString() => "($start, $end)";
 }
 
 class RangeMappedList extends ListBase<int> {
@@ -253,8 +213,10 @@ class RangeMappedList extends ListBase<int> {
   Iterable<Range> split(Range range) sync* {
     int current = range.start;
     for (final mapper in ranges) {
-      if (mapper.sourceStart > current) yield Range(current, mapper.sourceStart - 1);
-      if (mapper.sourceEnd > range.end) {
+      if (mapper.sourceStart > current)
+        yield Range(current, mapper.sourceStart - 1);
+
+      if (mapper.containsSourceIndex(range.end)) {
         yield Range(mapper.destinationStart, mapper[range.end]);
         break;
       }
