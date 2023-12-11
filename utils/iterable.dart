@@ -1,5 +1,7 @@
 import 'dart:math' as math;
 
+import 'geometry.dart';
+
 extension Aggregations on Iterable<int> {
   int sum() => isEmpty ? 0 : reduce((value, element) => value + element);
 
@@ -57,6 +59,15 @@ extension Groups<T> on Iterable<T> {
       if (!n1) break;
 
       yield join(i1.current, i2.current);
+    }
+  }
+
+  Iterable<List<T>> tuple(int n) sync* {
+    final cache = this.toList();
+    for (int i = 0; i < (cache.length / n).ceil(); i++) {
+      final end = i * n + n;
+      if (end > length) yield cache.sublist(i * n);
+      else yield cache.sublist(i * n, end);
     }
   }
 }
