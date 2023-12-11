@@ -77,8 +77,8 @@ extension Permutations<T> on Iterable<T> {
   }
 
   Iterable<S> expandPrint<S>(Iterable<S> Function(T e) toElements) {
-    final i = expand(toElements);
-    print("${i.length} - $i");
+    final i = expand(toElements).toList();
+    print("${i.length} - ${i.sublist(0, 11)}");
     return i;
   }
 }
