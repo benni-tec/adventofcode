@@ -1,3 +1,5 @@
+import 'dart:io';
+
 typedef Matrix<E> = List<List<E>>;
 
 extension MatrixOperations<E> on Matrix<E> {
@@ -41,6 +43,27 @@ extension MatrixOperations<E> on Matrix<E> {
         start.row + offset.row,
         start.column + offset.column,
       );
+
+  void insertRow(int index, List<E> row) => insert(index, row);
+
+  void insertColumn(int index, List<E> column) {
+    for (final (i, row) in this.indexed) {
+      row.insert(index, column[i]);
+    }
+  }
+
+  Iterable<Iterable<E>> get columns => Iterable.generate(
+        first.length,
+        (j) => Iterable.generate(
+          length,
+          (i) => this[i][j],
+        ),
+      );
+
+  Matrix<E> get transposed => columns.map((e) => e.toList()).toList();
+
+  String format(String Function(E element) formatter) =>
+      map((e) => e.map(formatter).join()).join("\n");
 }
 
 class MatrixOffset {
