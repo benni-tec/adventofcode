@@ -14,11 +14,9 @@ void main() async {
 }
 
 int do1(List<String> lines) {
-  final Matrix<String?> matrix = lines
-      .map(
-        (e) => e.split("").map((e) => e == "." ? null : e).toList(),
-      )
-      .toList();
+  final Matrix<String?> matrix = Matrix.fromRows(lines.map(
+    (e) => e.split("").map((e) => e == "." ? null : e),
+  ));
 
   final start = matrix.elements
       .firstWhere(
@@ -82,37 +80,37 @@ abstract class Pipes {
   ) sync* {
     final top = current.row > 0;
     final left = current.column > 0;
-    final bottom = current.row < matrix.length - 1;
-    final right = current.column < matrix.first.length - 1;
+    final bottom = current.row < matrix.rowLength - 1;
+    final right = current.column < matrix.columnLength - 1;
 
     switch (type(current.element)) {
       case PipeType.vertical:
-        if (top) yield matrix.at(current.row - 1, current.column);
-        if (bottom) yield matrix.at(current.row + 1, current.column);
+        if (top) yield matrix.elementAt(current.row - 1, current.column);
+        if (bottom) yield matrix.elementAt(current.row + 1, current.column);
       case PipeType.horizontal:
-        if (right) yield matrix.at(current.row, current.column + 1);
-        if (left) yield matrix.at(current.row, current.column - 1);
+        if (right) yield matrix.elementAt(current.row, current.column + 1);
+        if (left) yield matrix.elementAt(current.row, current.column - 1);
       case PipeType.bottomRight:
-        if (top) yield matrix.at(current.row - 1, current.column);
-        if (left) yield matrix.at(current.row, current.column - 1);
+        if (top) yield matrix.elementAt(current.row - 1, current.column);
+        if (left) yield matrix.elementAt(current.row, current.column - 1);
       case PipeType.bottomLeft:
-        if (top) yield matrix.at(current.row - 1, current.column);
-        if (right) yield matrix.at(current.row, current.column + 1);
+        if (top) yield matrix.elementAt(current.row - 1, current.column);
+        if (right) yield matrix.elementAt(current.row, current.column + 1);
       case PipeType.topRight:
-        if (bottom) yield matrix.at(current.row + 1, current.column);
-        if (left) yield matrix.at(current.row, current.column - 1);
+        if (bottom) yield matrix.elementAt(current.row + 1, current.column);
+        if (left) yield matrix.elementAt(current.row, current.column - 1);
       case PipeType.topLeft:
-        if (right) yield matrix.at(current.row, current.column + 1);
-        if (bottom) yield matrix.at(current.row + 1, current.column);
+        if (right) yield matrix.elementAt(current.row, current.column + 1);
+        if (bottom) yield matrix.elementAt(current.row + 1, current.column);
       case PipeType.start:
         if (top) {
-          final e = matrix.at(current.row - 1, current.column);
+          final e = matrix.elementAt(current.row - 1, current.column);
           if (_checkType(
               e, [PipeType.vertical, PipeType.topLeft, PipeType.topRight]))
             yield e;
         }
         if (right) {
-          final e = matrix.at(current.row, current.column + 1);
+          final e = matrix.elementAt(current.row, current.column + 1);
           if (_checkType(e, [
             PipeType.horizontal,
             PipeType.topRight,
@@ -120,7 +118,7 @@ abstract class Pipes {
           ])) yield e;
         }
         if (bottom) {
-          final e = matrix.at(current.row + 1, current.column);
+          final e = matrix.elementAt(current.row + 1, current.column);
           if (_checkType(e, [
             PipeType.vertical,
             PipeType.bottomRight,
@@ -128,7 +126,7 @@ abstract class Pipes {
           ])) yield e;
         }
         if (left) {
-          final e = matrix.at(current.row, current.column - 1);
+          final e = matrix.elementAt(current.row, current.column - 1);
           if (_checkType(
               e, [PipeType.horizontal, PipeType.topLeft, PipeType.bottomLeft]))
             yield e;
@@ -152,16 +150,12 @@ enum PipeType {
 }
 
 int do2(List<String> lines) {
-  final Matrix<String?> matrix = lines
-      .map(
-        (e) => e.split("").map((e) => e == "." ? null : e).toList(),
-      )
-      .toList();
+  final Matrix<String?> matrix = Matrix.fromRows(lines.map(
+    (e) => e.split("").map((e) => e == "." ? null : e),
+  ));
 
-  final Matrix<Ground?> edges = List.generate(
-    matrix.length,
-    (index) => List.filled(matrix.first.length, null),
-  );
+  final Matrix<Ground?> edges =
+      Matrix.filled(matrix.rowLength, matrix.columnLength, null);
 
   final start = matrix.elements
       .firstWhere(
@@ -170,9 +164,9 @@ int do2(List<String> lines) {
       .cast<String>();
 
   // adds pipes
-  for (final (i, row) in matrix.indexed) {
+  for (final (i, row) in matrix.rows.indexed) {
     for (final (j, element) in row.indexed) {
-      if (element != null) edges[i][j] = Pipe();
+      if (element != null) edges.set(i, j, Pipe());
     }
   }
 
@@ -183,11 +177,11 @@ int do2(List<String> lines) {
     (current, last) = _do1(matrix, current!, last);
 
     if (current == null) break;
-    edges[current.row][current.column] = Loop(Pipes.type(current.element));
+    edges.setAt(current, Loop(Pipes.type(current.element)));
   }
 
   // adds start
-  edges[start.row][start.column] = Loop(PipeType.start);
+  edges.setAt(start, Loop(PipeType.start));
 
   var elements = edges.elements.toList();
 
@@ -213,17 +207,17 @@ int do2(List<String> lines) {
     final _edges = patch.map((e) {
       final top = e.row > 0;
       final left = e.column > 0;
-      final bottom = e.row < matrix.length - 1;
-      final right = e.column < matrix.first.length - 1;
+      final bottom = e.row < matrix.rowLength - 1;
+      final right = e.column < matrix.columnLength - 1;
 
       return MatrixElement(
         e.row,
         e.column,
         Edge(
-          boundsTop: top && matrix.at(e.row - 1, e.column) is Loop,
-          boundsLeft: left && matrix.at(e.row, e.column - 1) is Loop,
-          boundsBottom: bottom && matrix.at(e.row + 1, e.column) is Loop,
-          boundsRight: right && matrix.at(e.row, e.column + 1) is Loop,
+          boundsTop: top && matrix.elementAt(e.row - 1, e.column) is Loop,
+          boundsLeft: left && matrix.elementAt(e.row, e.column - 1) is Loop,
+          boundsBottom: bottom && matrix.elementAt(e.row + 1, e.column) is Loop,
+          boundsRight: right && matrix.elementAt(e.row, e.column + 1) is Loop,
         ),
       );
     }).toList();
@@ -236,11 +230,11 @@ int do2(List<String> lines) {
     if (isComplete) {
       patches.add(_edges.map((e) => e.element).toList());
       for (final e in _edges) {
-        edges[e.row][e.column] = e.element;
+        edges.setAt(e, e.element);
       }
     } else {
       for (final e in patch) {
-        edges[e.row][e.column] = Ground();
+        edges.setAt(e, e.element);
       }
     }
 
@@ -248,7 +242,7 @@ int do2(List<String> lines) {
   }
 
   print(edges);
-  edges.forEach((row) => print(row.join()));
+  edges.rows.forEach((row) => print(row.join()));
 
   return 0;
 }

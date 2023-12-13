@@ -13,7 +13,8 @@ final example = """...#......
 .........#
 ..........
 .......#..
-#...#.....""".split("\n");
+#...#....."""
+    .split("\n");
 
 void main() async {
   final input = await File('2023/11-input.txt').readAsLines();
@@ -22,11 +23,11 @@ void main() async {
 
 int do1(List<String> lines) {
   final universe = Universe.parse(lines);
-  print(universe.matrix.format((e) => e is Galaxy ? "#" : "."));
+  print(universe.matrix.map((e) => e is Galaxy ? "#" : "."));
   print("");
 
   final expanded = universe.expanded();
-  print(expanded.matrix.format((e) => e is Galaxy ? "#" : "."));
+  print(expanded.matrix.map((e) => e is Galaxy ? "#" : "."));
 
   final galaxies = expanded.matrix.elements
       .where((e) => e.element is Galaxy)
@@ -67,10 +68,8 @@ class Universe {
 
   factory Universe.parse(List<String> lines) {
     return Universe(
-      lines
-          .map((e) =>
-              e.split("").map((e) => e == "#" ? Galaxy() : null).toList())
-          .toList(),
+      Matrix.fromRows(
+          lines.map((e) => e.split("").map((e) => e == "#" ? Galaxy() : null))),
       false,
     );
   }
@@ -78,14 +77,14 @@ class Universe {
   Universe expanded() {
     if (isExpanded) return this;
 
-    final expanded = matrix.toList();
+    final expanded = matrix.clone();
     int insertedRows = 0;
-    for (final (i, row) in matrix.indexed) {
+    for (final (i, row) in matrix.rows.indexed) {
       if (row.none((e) => e is Galaxy)) {
         expanded.insertRow(
           i + insertedRows + 1,
           List.filled(
-            expanded.first.length,
+            expanded.columnLength,
             null,
             growable: true,
           ),
@@ -100,7 +99,7 @@ class Universe {
         expanded.insertColumn(
           j + insertedColumns + 1,
           List.filled(
-            expanded.length,
+            expanded.rowLength,
             null,
             growable: true,
           ),

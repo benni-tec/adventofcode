@@ -57,10 +57,10 @@ class Pattern {
   const Pattern(this.pattern);
 
   Pattern.parse(List<String> lines)
-      : pattern = lines.map((e) => e.split("")).toList();
+      : pattern = Matrix.fromRows(lines.map((e) => e.split("")));
 
   Set<int> horizontalReflection() =>
-      _reflection(pattern.map((e) => e.join()).toList());
+      _reflection(pattern.rows.map((e) => e.join()).toList());
 
   Set<int> verticalReflection() =>
       _reflection(pattern.columns.map((e) => e.join()).toList());
@@ -88,7 +88,7 @@ class Pattern {
   }
 
   Set<int> smudgesHorizontal() =>
-      _smudges(pattern.map((e) => e.join()).toList());
+      _smudges(pattern.rows.map((e) => e.join()).toList());
 
   Set<int> smudgesVertical() =>
       _smudges(pattern.columns.map((e) => e.join()).toList());

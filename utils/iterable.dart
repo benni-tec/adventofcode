@@ -20,6 +20,8 @@ extension Empty on Iterable<String> {
 
 extension Nested<T> on Iterable<Iterable<T>> {
   Iterable<T> flatten() => expand((element) => element);
+
+  List<List<T>> toLists() => map((e) => e.toList()).toList();
 }
 
 extension Groups<T> on Iterable<T> {
